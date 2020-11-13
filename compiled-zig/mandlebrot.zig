@@ -1,5 +1,5 @@
 const std=@import("std");const print=std.debug.print;
-pub fn main()void{var p:usize=0;var t=std.mem.zeroes([3000]u8);
+pub fn main()void{var p:usize=0;var t=[_]u8{0}**65535;
 _=@addWithOverflow(u8,t[p],13,&t[p]);while(t[p]>0){_=@subWithOverflow(u8,t[p],1,&t[p]);
 p+=1;_=@addWithOverflow(u8,t[p],2,&t[p]);p+=3;_=@addWithOverflow(u8,t[p],5,&t[p]);
 p+=1;_=@addWithOverflow(u8,t[p],2,&t[p]);p+=1;_=@addWithOverflow(u8,t[p],1,&t[p]);

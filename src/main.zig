@@ -72,7 +72,7 @@ pub fn main() !void {
         const file = try std.fs.cwd().createFile(new_path, flags);
         _=try file.write("const std=@import(\"std\");const print=std.debug.print;\n");
         _=try file.write("pub fn main()void{");
-        _=try file.write("var p:usize=0;var t=std.mem.zeroes([3000]u8);\n");
+        _=try file.write("var p:usize=0;var t=[_]u8{0}**65535;\n");
 
         const w = file.writer();
         while (pr.pc < pr.program.len) : (pr.pc += 1) {

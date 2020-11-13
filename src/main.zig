@@ -14,8 +14,6 @@ const Program = struct {
     current_char: u8,
 };
 
-const bf_program = ">+++++++++[<++++++++>-]<.>+++++++[<++++>-]<+.+++++++..+++.>>>++++++++[<++++>-]<.>>>++++++++++[<+++++++++>-]<---.<<<<.+++.------.--------.>>+.>++++++++++.";
-
 pub fn main() !void {
     var arg_buf: [4096]u8 = undefined;
     var arg_alloc = &FixedBufferAllocator.init(&arg_buf).allocator;
@@ -31,16 +29,20 @@ pub fn main() !void {
             .write = false,
         };
 
-        const program_file = try std.fs.cwd().openFile(args[1], input_flags);
-        const size = try program_file.getEndPos();
+        const prgm = pr: {
+            const program_file = try std.fs.cwd().openFile(args[1], input_flags);
+            const size = try program_file.getEndPos();
 
-        var buf = try page_allocator.alloc(u8, size);
+            var buf = try page_allocator.alloc(u8, size);
 
-        const bytes_real = try program_file.read(buf);
+            const bytes_real = try program_file.read(buf);
+
+            break :pr buf;
+        };
     
         var pr = Program {
             .pc = 0,
-            .program = buf,
+            .program = prgm,
             .current_char = undefined,
         };
 
@@ -52,7 +54,21 @@ pub fn main() !void {
             .exclusive = false,
         };
 
-        const file = try std.fs.cwd().createFile("compiled.zig", flags);
+        const new_path = blk: {
+            const filename = args[1];
+            const dot_index = iblk: {
+                for (filename) |char, idx| {
+                    if (char == '.') {
+                        break :iblk idx;
+                    }
+                }
+                break :iblk 0;
+            };
+            const new_name = filename[0..dot_index];
+            break :blk try std.mem.concat(page_allocator, u8, &[_][]const u8{"compiled-zig/", new_name, ".zig"});
+        };
+
+        const file = try std.fs.cwd().createFile(new_path, flags);
         _=try file.write("const std=@import(\"std\");const print=std.debug.print;\n");
         _=try file.write("pub fn main()void{");
         _=try file.write("var p:usize=0;var t=std.mem.zeroes([3000]u8);\n");

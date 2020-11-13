@@ -64,6 +64,7 @@ pub fn main() !void {
                 }
                 break :iblk 0;
             };
+            if (dot_index == 0) { break :blk filename; }
             const new_name = filename[0..dot_index];
             break :blk try std.mem.concat(page_allocator, u8, &[_][]const u8{"compiled-zig/", new_name, ".zig"});
         };

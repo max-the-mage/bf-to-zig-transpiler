@@ -1,4 +1,5 @@
 const std = @import("std");
+const clap = @import("clap");
 const print = std.debug.print;
 
 const argsAlloc = std.process.argsAlloc;
@@ -15,22 +16,33 @@ const Program = struct {
 };
 
 pub fn main() !void {
-    var arg_buf: [4096]u8 = undefined;
-    var arg_alloc = &FixedBufferAllocator.init(&arg_buf).allocator;
+    
+    const params = comptime [_]clap.Param(clap.Help) {
+        clap.parseParam("-h, --help") catch unreachable,
+        clap.parseParam("-s, --source <STR>") catch unreachable,
+    };
 
-    const args = try argsAlloc(arg_alloc);
-    defer arg_alloc.free(args);
+    var diag: clap.Diagnostic = undefined;
 
-    if (args.len < 2) {
-        print("usage:\nzigbf <filename>\n", .{});
-    } else {
+    var args = clap.parse(clap.Help, &params, std.heap.page_allocator, &diag) catch |err| {
+        diag.report(std.io.getStdErr().outStream(), err) catch {};
+        return err;
+    };
+    defer args.deinit();
+
+    if (args.flag("--help"))
+        print("--help                  Display this menu\n-s --source <filename>  Transpile brainfuck into zig\n", .{});
+    if (args.option("--source")) |filename| {
         const input_flags = std.fs.File.OpenFlags {
             .read = true,
             .write = false,
         };
 
         const prgm = pr: {
-            const program_file = try std.fs.cwd().openFile(args[1], input_flags);
+            const program_file = std.fs.cwd().openFile(filename, input_flags) catch |err| {
+                print("Unable to compile due to error: {}\n", .{err});
+                return;
+            };
             const size = try program_file.getEndPos();
 
             var buf = try page_allocator.alloc(u8, size);
@@ -55,7 +67,6 @@ pub fn main() !void {
         };
 
         const new_path = blk: {
-            const filename = args[1];
             const dot_index = iblk: {
                 for (filename) |char, idx| {
                     if (char == '.') {
@@ -116,6 +127,7 @@ pub fn main() !void {
         }
         _=try file.write("}");
     }
+    print("compilation successful\n", .{});
 }
 
 fn amount(pr: *Program) u8 {

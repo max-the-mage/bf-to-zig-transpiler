@@ -1,0 +1,3 @@
+[submodule "libs/adma"]
+    path = libs/adma
+    url = https://github.com/suirad/adma

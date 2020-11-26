@@ -1,4 +1,16 @@
-const Builder = @import("std").build.Builder;
+const std = @import("std");
+const Builder = std.build.Builder;
+
+const pkgs = .{
+    .adma = .{
+        .name = "adma",
+        .path = "libs/adma/src/adma.zig",
+    },
+    .clap = .{
+        .name = "clap",
+        .path = "libs/clap/clap.zig",
+    }
+};
 
 pub fn build(b: *Builder) void {
     // Standard target options allows the person running `zig build` to choose
@@ -14,6 +26,9 @@ pub fn build(b: *Builder) void {
     const exe = b.addExecutable("bf-to-zig-compiler", "src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
+    inline for (std.meta.fields(@TypeOf(pkgs))) |field| {
+        exe.addPackage(@field(pkgs, field.name));
+    }
     exe.install();
 
     const run_cmd = exe.run();
